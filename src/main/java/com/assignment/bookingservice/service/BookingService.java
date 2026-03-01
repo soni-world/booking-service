@@ -5,6 +5,7 @@ import com.assignment.bookingservice.dto.request.BookingUpdateRequest;
 import com.assignment.bookingservice.dto.response.BookingResponse;
 import com.assignment.bookingservice.entity.Booking;
 import com.assignment.bookingservice.entity.Professional;
+import com.assignment.bookingservice.exception.BookingNotFoundException;
 import com.assignment.bookingservice.exception.NoAvailabilityProfessionalException;
 import com.assignment.bookingservice.repository.BookingRepository;
 import com.assignment.bookingservice.repository.ProfessionalRepository;
@@ -91,5 +92,11 @@ public class BookingService {
 
     public BookingResponse updateBooking(Long bookingId, BookingUpdateRequest request) {
         return null;
+    }
+
+    public BookingResponse getBooking(Long bookingId) {
+        Booking booking = bookingRepository.findByIdWithProfessionals(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
+        return toResponse(booking);
     }
 }
