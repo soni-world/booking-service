@@ -163,7 +163,7 @@ public class AvailabilityService {
         return true;
     }
 
-    private void validateTimeWindow(LocalTime start, LocalTime end) {
+    public void validateTimeWindow(LocalTime start, LocalTime end) {
 
         if (start.isBefore(WORK_START)) {
             throw new InvalidBookingRequestException(
@@ -175,7 +175,7 @@ public class AvailabilityService {
         }
     }
 
-    private Map<Long, List<Booking>> buildBookingMap(List<Booking> dayBookings) {
+    public Map<Long, List<Booking>> buildBookingMap(List<Booking> dayBookings) {
         return dayBookings.stream()
                 .flatMap(b -> b.getProfessionals().stream()
                         .map(p -> Map.entry(p.getId(), b)))
@@ -189,5 +189,49 @@ public class AvailabilityService {
         if (date.getDayOfWeek() == DayOfWeek.FRIDAY) {
             throw new InvalidBookingRequestException("Bookings are not allowed on Fridays");
         }
+    }
+
+    public void validateDuration(int duration) {
+        if (duration != 2 && duration != 4) {
+            throw new InvalidBookingRequestException("Duration must be 2 or 4 hours");
+        }
+    }
+
+    public void validateProfessionalCount(int count) {
+        if (count < 1 || count > 3) {
+            throw new InvalidBookingRequestException("Professional count must be 1, 2, or 3");
+        }
+    }
+
+    public List<Professional> findAvailableProfessionalsAcrossVehicles(
+            LocalTime start,
+            LocalTime end,
+            Map<Long, List<Booking>> bookingsByProfessional,
+            int count,
+            Long preferredVehicleId
+    ) {
+        List<Vehicle> vehicles = vehicleRepository.findAllWithProfessionals();
+
+        if (preferredVehicleId != null) {
+            vehicles.sort((a, b) ->
+                    a.getId().equals(preferredVehicleId) ? -1 :
+                            b.getId().equals(preferredVehicleId) ? 1 : 0
+            );
+        }
+
+        for (Vehicle vehicle : vehicles) {
+            List<Professional> free = vehicle.getProfessionals().stream()
+                    .filter(p -> isProfessionalAvailable(
+                            start, end,
+                            bookingsByProfessional.getOrDefault(p.getId(), List.of())
+                    ))
+                    .toList();
+
+            if (free.size() >= count) {
+                return free.subList(0, count);
+            }
+        }
+
+        return List.of();
     }
 }

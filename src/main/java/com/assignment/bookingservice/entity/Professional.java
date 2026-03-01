@@ -1,6 +1,6 @@
 package com.assignment.bookingservice.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
@@ -22,7 +22,7 @@ public class Professional {
 
     private String name;
 
-    @JsonIgnore
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;

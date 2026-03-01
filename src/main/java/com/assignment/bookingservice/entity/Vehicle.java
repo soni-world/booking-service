@@ -1,5 +1,6 @@
 package com.assignment.bookingservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,6 +28,7 @@ public class Vehicle {
     @Column(name = "plate_number", nullable = false, length = 20)
     private String plateNumber;
 
+    @JsonBackReference
     @OneToMany(mappedBy = "vehicle", fetch = FetchType.LAZY)
     private List<Professional> professionals = new ArrayList<>();
 }
