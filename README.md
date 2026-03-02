@@ -2,7 +2,7 @@
 
 #  Booking Service
 
-Cleaning professional booking system built with Spring Boot 3.5, MySQL, and Redis.
+Cleaning professional booking system built with Spring Boot 3.5, MySQL.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ Cleaning professional booking system built with Spring Boot 3.5, MySQL, and Redi
 ## Run
 
 ```bash
-# 1. Start MySQL & Redis
+# 1. Start MySQL
 docker compose up -d
 
 # 2. Start the application (Flyway handles schema + seed data)
