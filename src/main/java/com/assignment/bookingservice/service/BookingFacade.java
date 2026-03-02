@@ -32,7 +32,4 @@ public class BookingFacade {
     public BookingResponse updateBooking(Long bookingId, BookingUpdateRequest request) {
         return bookingService.updateBooking(bookingId, request);
     }
-
-
-
 }

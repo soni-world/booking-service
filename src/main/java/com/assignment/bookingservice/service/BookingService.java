@@ -6,6 +6,7 @@ import com.assignment.bookingservice.dto.response.BookingResponse;
 import com.assignment.bookingservice.entity.Booking;
 import com.assignment.bookingservice.entity.Professional;
 import com.assignment.bookingservice.exception.BookingNotFoundException;
+import com.assignment.bookingservice.exception.NoAvailabilityException;
 import com.assignment.bookingservice.exception.NoAvailabilityProfessionalException;
 import com.assignment.bookingservice.repository.BookingRepository;
 import com.assignment.bookingservice.repository.ProfessionalRepository;
@@ -14,8 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +59,7 @@ public class BookingService {
         booking.setEndTime(endTime);
         booking.setDuration(request.getDuration());
         booking.setStatus("CONFIRMED");
-        booking.setProfessionals(professionals);
+        booking.setProfessionals(new ArrayList<>(professionals));
 
         booking = bookingRepository.save(booking);
 
@@ -90,8 +90,58 @@ public class BookingService {
         );
     }
 
+    @Transactional
     public BookingResponse updateBooking(Long bookingId, BookingUpdateRequest request) {
-        return null;
+        Booking existing = bookingRepository.findById(bookingId).orElseThrow(
+                () -> new BookingNotFoundException("Booking not found for given ID: " + bookingId));
+        availabilityService.validateDate(request.getDate());
+        LocalTime newStartTime = request.getStartTime();
+        LocalTime newEndTime = newStartTime.plusHours(existing.getDuration());
+        availabilityService.validateTimeWindow(newStartTime, newEndTime);
+
+        int requiredCount = existing.getProfessionals().size();
+        Long originalVehicleId = existing.getProfessionals().get(0).getVehicle().getId();
+
+        // Get all bookings for the new date, EXCLUDING current booking
+        // (solving the same as new booking flow so the professional is free)
+        List<Booking> newDayBooking = bookingRepository.findByDate(request.getDate())
+                .stream().filter(b -> !b.getId().equals(bookingId)).toList();
+        Map<Long, List<Booking>> bookingMap = availabilityService.buildBookingMap(newDayBooking);
+
+        List<Professional> professionals = availabilityService.findAvailableProfessionalsAcrossVehicles(
+                newStartTime, newEndTime, bookingMap, requiredCount, originalVehicleId
+        );
+
+        if (professionals.isEmpty()) {
+            throw new NoAvailabilityException("No vehicle has " + requiredCount + " available professionals for the requested time");
+        }
+
+        List<Professional> oldProfessionals = new ArrayList<>(existing.getProfessionals());
+
+        // Update booking
+        existing.setDate(request.getDate());
+        existing.setStartTime(newStartTime);
+        existing.setEndTime(newEndTime);
+        existing.setProfessionals(new ArrayList<>(professionals));;
+
+        bookingRepository.save(existing);
+
+        // process of updating the version of selected professional
+        Set<Long> versionIds = new HashSet<>();
+
+        for (Professional p : oldProfessionals) {
+            versionIds.add(p.getId());
+            professionalRepository.save(p);
+        }
+
+        for (Professional p : professionals) {
+            if (!versionIds.contains(p.getId())) {
+                professionalRepository.save(p);
+            }
+
+        }
+
+        return toResponse(existing);
     }
 
     public BookingResponse getBooking(Long bookingId) {

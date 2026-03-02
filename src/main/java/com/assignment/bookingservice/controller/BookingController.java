@@ -2,6 +2,7 @@ package com.assignment.bookingservice.controller;
 
 
 import com.assignment.bookingservice.dto.request.BookingCreateRequest;
+import com.assignment.bookingservice.dto.request.BookingUpdateRequest;
 import com.assignment.bookingservice.dto.response.BookingResponse;
 import com.assignment.bookingservice.service.BookingFacade;
 import com.assignment.bookingservice.service.BookingService;
@@ -38,6 +39,14 @@ public class BookingController {
     @Operation(summary = "Get booking details")
     public ResponseEntity<BookingResponse> getBooking(@PathVariable Long id) {
         BookingResponse response = bookingService.getBooking(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update booking details")
+    public ResponseEntity<BookingResponse> updateBooking(
+            @PathVariable Long id, @Valid @RequestBody BookingUpdateRequest request) {
+        BookingResponse response = bookingFacade.updateBooking(id, request);
         return ResponseEntity.ok(response);
     }
 }
