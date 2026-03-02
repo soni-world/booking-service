@@ -3,6 +3,7 @@ package com.assignment.bookingservice.controller;
 import com.assignment.bookingservice.dto.response.AvailabilityResponse;
 import com.assignment.bookingservice.service.AvailabilityService;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,7 +29,7 @@ public class AvailabilityController {
             @Parameter(description = "Date of service", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
 
-            @Parameter(description = "Start time (HH:mm)")
+            @Parameter(description = "Start time (HH:mm)", schema = @Schema(type = "string", format = "time", example = "08:00"))
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
 
             @Parameter(description = "Duration in hours (2 or 4)")
